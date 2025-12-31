@@ -32,7 +32,7 @@ async fn main() -> Result<()> {
     let state = AppState {
         config: Arc::new(config.clone()),
         client: reqwest::Client::builder()
-            .timeout(std::time::Duration::from_secs(5))
+            .timeout(std::time::Duration::from_secs(config.timeout_secs))
             .build()?,
     };
 

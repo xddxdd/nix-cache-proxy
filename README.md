@@ -16,9 +16,10 @@ The compiled binary will be available at `target/release/nix-cache-proxy`.
 nix-cache-proxy [OPTIONS]
 
 Options:
-  -b, --bind <BIND>          Bind address [default: 127.0.0.1:8080]
-  -u, --upstream <UPSTREAM>  Upstream cache URLs (repeatable) [default: https://cache.nixos.org]
-  -h, --help                 Print help
+  -b, --bind <BIND>                  Bind address [default: 127.0.0.1:8080]
+  -u, --upstream <UPSTREAM>          Upstream cache URLs (repeatable) [default: https://cache.nixos.org]
+  -t, --timeout-secs <TIMEOUT_SECS>  Request timeout in seconds [default: 5]
+  -h, --help                         Print help
 ```
 
 ### Example

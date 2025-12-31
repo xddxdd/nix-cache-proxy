@@ -16,6 +16,10 @@ pub struct Config {
     #[arg(short, long, default_value = "https://cache.nixos.org")]
     upstream: Vec<String>,
 
+    /// Request timeout in seconds
+    #[arg(short, long, default_value_t = 5)]
+    pub timeout_secs: u64,
+
     #[clap(skip)]
     pub listen_mode: ListenMode,
 
