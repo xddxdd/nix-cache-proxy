@@ -3,53 +3,81 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
-    rust-overlay = {
-      url = "github:oxalica/rust-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    flake-parts.url = "github:hercules-ci/flake-parts";
   };
 
   outputs =
-    {
-      self,
-      nixpkgs,
-      flake-utils,
-      rust-overlay,
-    }:
-    flake-utils.lib.eachDefaultSystem (
-      system:
-      let
-        overlays = [ (import rust-overlay) ];
-        pkgs = import nixpkgs {
-          inherit system overlays;
-        };
-
-        rustToolchain = pkgs.rust-bin.stable.latest.default.override {
-          extensions = [
-            "rust-src"
-            "rust-analyzer"
-            "clippy"
-          ];
-        };
-      in
+    inputs@{ self, flake-parts, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } (
+      { lib, ... }:
       {
-        devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            rustToolchain
-            cargo-watch
-            cargo-edit
-          ];
+        systems = [
+          "x86_64-linux"
+          "aarch64-linux"
+        ];
 
-          RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
+        flake = {
+          nixosModules.nix-cache-proxy = ./module.nix;
+          overlay = self.overlays.default;
+          overlays = {
+            default = final: prev: {
+              nix-cache-proxy = self.packages.${final.stdenv.hostPlatform.system}.default;
+            };
+          };
+
+          # Example configurations for testing package
+          nixosConfigurations.test = inputs.nixpkgs.lib.nixosSystem {
+            system = "x86_64-linux";
+            modules = [
+              self.nixosModules.nix-cache-proxy
+              {
+                nixpkgs.overlays = [ self.overlays.default ];
+                services.nix-cache-proxy.enable = true;
+
+                # Minimal config to make test configuration build
+                boot.loader.grub.devices = [ "/dev/vda" ];
+                fileSystems."/" = {
+                  device = "tmpfs";
+                  fsType = "tmpfs";
+                };
+                system.stateVersion = lib.trivial.release;
+              }
+            ];
+          };
         };
 
-        packages.default = pkgs.rustPlatform.buildRustPackage {
-          pname = "nix-cache-proxy";
-          version = "0.1.0";
-          src = ./.;
-          cargoLock.lockFile = ./Cargo.lock;
-        };
+        perSystem =
+          { pkgs, ... }:
+          {
+            devShells.default = pkgs.mkShell {
+              packages = with pkgs; [
+                cargo
+                rustc
+                rust-analyzer
+                clippy
+                rustfmt
+                cargo-watch
+                cargo-edit
+              ];
+
+              RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";
+            };
+
+            packages.default = pkgs.rustPlatform.buildRustPackage (finalAttrs: {
+              pname = "nix-cache-proxy";
+              version = "0.1.0";
+              src = ./.;
+              cargoLock.lockFile = ./Cargo.lock;
+
+              meta = {
+                mainProgram = finalAttrs.pname;
+                maintainers = with lib.maintainers; [ xddxdd ];
+                description = "Proxy for Nix Binary Cache";
+                homepage = "https://github.com/xddxdd/nix-cache-proxy";
+                license = lib.licenses.gpl3Plus;
+              };
+            });
+          };
       }
     );
 }
