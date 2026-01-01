@@ -1,6 +1,6 @@
 # Nix Cache Proxy
 
-Request Nix binary caches in parallel. Speeds up Nix daemon's binary cache lookup requests.
+A simple proxy server that request multiple Nix binary caches in parallel. Helps speeding up Nix daemon's binary cache lookup requests, especially with many binary caches, since Nix daemon looks them up one by one.
 
 ## Building
 
