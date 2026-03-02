@@ -60,6 +60,7 @@ in
 
         User = "nix-cache-proxy";
         Group = "nix-cache-proxy";
+        LimitNOFILE = 1048576;
 
         # Hardening
         AmbientCapabilities = "";
